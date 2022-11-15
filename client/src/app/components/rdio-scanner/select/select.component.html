@@ -21,7 +21,7 @@
             <button *ngFor="let talkgroup of system.talkgroups" class="rdio-button"
                 [ngClass]="{ off: !(map[system.id] && map[system.id][talkgroup.id]), on: map[system.id] && map[system.id][talkgroup.id] }"
                 (click)="avoid({ system: system, talkgroup: talkgroup })">
-                {{ talkgroup.label }}
+                {{ talkgroup.label }} {{ talkgroup.name }}
             </button>
             <ng-container *ngIf="system.talkgroups.length > 1">
                 <button class="rdio-button-mini all-off" (click)="avoid({ system: system, status: false })">

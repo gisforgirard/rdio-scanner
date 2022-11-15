@@ -88,7 +88,7 @@ export class Controller extends EventEmitter {
 
     broadcastConfig() {
         if (this.websocket) {
-            this.websocket.getSockets().forEach(async (socket) => {
+            this.websocket.wss.clients.forEach(async (socket) => {
                 if (this.isAccessRestricted && !socket.access) {
                     return;
                 }
@@ -135,6 +135,8 @@ export class Controller extends EventEmitter {
                     '32k',
                     '-movflags',
                     'frag_keyframe+empty_moov',
+                    '-af',
+                    'dynaudnorm=f=75:g=11',
                     '-f',
                     'ipod',
                     '-',
@@ -375,18 +377,32 @@ export class Controller extends EventEmitter {
 
     async getCalls(options, scope) {
         const filters = [];
+        console.log(options);
+        //console.log(scope);
+        if (scope !== null && typeof scope === 'object') { // this is literally retarded and there is no reason for this to exist
+            console.log('scope !== null && typeof scope === object');
 
-        if (scope !== null && typeof scope === 'object') {
+
+/*
             filters.push({
                 [Sequelize.Op.or]: Object.keys(scope).map((sys) => ({
                     system: +sys,
                     talkgroup: { [Sequelize.Op.in]: scope[sys] },
                 })),
             });
+*/
         }
-
+        if (options && typeof options.system === 'number') {
+            console.log('options.system === number');
+            filters.push({ system: options.system });
+        }
+        if (options && typeof options.talkgroup === 'number') { // if there is a single talkgroup then everything else doesn't really matter...
+            console.log('options.talkgroup === number');
+            filters.push({ talkgroup: options.talkgroup });
+        } else {
         if (options && typeof options.group === 'string' && options.group.length) {
             const group = this.groupsMap[options.group];
+            console.log('options.group === string');
 
             filters.push({
                 [Sequelize.Op.or]: Object.keys(group).map((sys) => ({
@@ -396,12 +412,9 @@ export class Controller extends EventEmitter {
             });
         }
 
-        if (options && typeof options.system === 'number') {
-            filters.push({ system: options.system });
-        }
-
         if (options && typeof options.tag === 'string' && options.tag.length) {
             const tag = this.tagsMap[options.tag];
+            console.log('options.tag === string');
 
             filters.push({
                 [Sequelize.Op.or]: Object.keys(tag).map((sys) => ({
@@ -410,11 +423,9 @@ export class Controller extends EventEmitter {
                 })),
             });
         }
+	}
 
-        if (options && typeof options.talkgroup === 'number') {
-            filters.push({ talkgroup: options.talkgroup });
-        }
-
+        console.log(filters);
         const attributes = ['id', 'dateTime', 'system', 'talkgroup'];
 
         const date = options && typeof options.date === 'string' ? new Date(options.date) : null;
@@ -438,7 +449,8 @@ export class Controller extends EventEmitter {
                 },
             ],
         } : where1;
-
+        console.log(where1);
+        console.log(where2);
         const [dateStartQuery, dateStopQuery, count, results] = await Promise.all([
             await this.models.call.findOne({ attributes: ['dateTime'], order: [['dateTime', 'ASC']], where: where1 }),
             await this.models.call.findOne({ attributes: ['dateTime'], order: [['dateTime', 'DESC']], where: where1 }),
@@ -608,7 +620,7 @@ export class Controller extends EventEmitter {
 
     async importCall(call = {}, meta) {
         meta = meta !== null && typeof meta === 'object' ? meta : {};
-
+        //console.log(call);
         const groups = this.config.groups;
         const systems = this.config.systems;
         const tags = this.config.tags;
@@ -720,9 +732,10 @@ export class Controller extends EventEmitter {
             const dateTo = new Date(call.dateTime);
             const delay = this.config.options.duplicateDetectionTimeFrame ?? defaults.options.duplicateDetectionTimeFrame;
 
-            dateFrom.setMilliseconds(dateFrom.getMilliseconds() - delay);
-            dateTo.setMilliseconds(dateTo.getMilliseconds() + delay);
+            //dateFrom.setMilliseconds(dateFrom.getMilliseconds() - delay);
+            //dateTo.setMilliseconds(dateTo.getMilliseconds() + delay);
 
+            console.log(call.dateTime);
             const duplicateCall = await this.models.call.findOne({
                 where: {
                     dateTime: {
@@ -914,7 +927,7 @@ export class Controller extends EventEmitter {
                         socket.authCount = 0;
 
                         if (typeof socket.access.limit === 'number') {
-                            const count = Array.from(this.websocket.getSockets())
+                            const count = Array.from(this.websocket.wss.clients)
                                 .reduce((c, s) => s.access?.code === token ? ++c : c, 0);
 
                             if (count > socket.access.limit) {
@@ -985,7 +998,7 @@ export class Controller extends EventEmitter {
             }, 15 * 60 * 1000);
 
         } else {
-            this.pruneScheduler = null;
+            this.pruneInterval = null;
         }
     }
 

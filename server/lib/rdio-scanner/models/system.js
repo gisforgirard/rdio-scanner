@@ -44,9 +44,21 @@ systemFactory.schema = {
         defaultValue: false,
     },
     blacklists: {
-        type: Sequelize.DataTypes.JSON,
-        defaultValue: [],
+        type: Sequelize.DataTypes.TEXT,
+        defaultValue: '[]',
         allowNull: false,
+        get() {
+            const rawValue = this.getDataValue('blacklists');
+            try {
+                return JSON.parse(rawValue);
+            } catch (_) {
+                return rawValue;
+            }
+        },
+        set(value) {
+            const rawValue = JSON.stringify(value);
+            this.setDataValue('blacklists', rawValue);
+        },
     },
     id: {
         type: Sequelize.DataTypes.INTEGER,
@@ -66,13 +78,37 @@ systemFactory.schema = {
         allowNull: true,
     },
     talkgroups: {
-        type: Sequelize.DataTypes.JSON,
-        defaultValue: [],
+        type: Sequelize.DataTypes.TEXT,
+        defaultValue: '[]',
         allowNull: false,
+        get() {
+            const rawValue = this.getDataValue('talkgroups');
+            try {
+                return JSON.parse(rawValue);
+            } catch (_) {
+                return rawValue;
+            }
+        },
+        set(value) {
+            const rawValue = JSON.stringify(value);
+            this.setDataValue('talkgroups', rawValue);
+        },
     },
     units: {
-        type: Sequelize.DataTypes.JSON,
-        defaultValue: [],
+        type: Sequelize.DataTypes.TEXT,
+        defaultValue: '[]',
         allowNull: false,
+        get() {
+            const rawValue = this.getDataValue('units');
+            try {
+                return JSON.parse(rawValue);
+            } catch (_) {
+                return rawValue;
+            }
+        },
+        set(value) {
+            const rawValue = JSON.stringify(value);
+            this.setDataValue('units', rawValue);
+        },
     },
 };

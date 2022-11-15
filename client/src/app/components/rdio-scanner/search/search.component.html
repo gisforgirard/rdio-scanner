@@ -71,7 +71,7 @@
             <mat-icon>save_alt</mat-icon>
         </mat-slide-toggle>
         <mat-paginator [disabled]="livefeedPlayback || resultsPending" [length]="playbackList?.count" [hidePageSize]="true"
-            [pageSize]="results.value.length" [showFirstLastButtons]="true" (page)="refreshResults()">
+            [pageSize]="results.value.length" [showFirstLastButtons]="false" (page)="refreshResults()">
         </mat-paginator>
     </div>
 </mat-card>

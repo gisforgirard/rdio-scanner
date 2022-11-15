@@ -1,41 +1,40 @@
 {
-    "author": "Chrystian Huot <chrystian.huot@saubeo.solutions>",
-    "dependencies": {
-        "@angular/animations": "^12.2.0",
-        "@angular/cdk": "^12.2.0",
-        "@angular/common": "~12.2.0",
-        "@angular/compiler": "~12.2.0",
-        "@angular/core": "~12.2.0",
-        "@angular/forms": "~12.2.0",
-        "@angular/material": "^12.2.0",
-        "@angular/platform-browser": "~12.2.0",
-        "@angular/platform-browser-dynamic": "~12.2.0",
-        "@angular/router": "^12.2.0",
-        "@angular/service-worker": "^12.2.0",
-        "rxjs": "~6.5.5",
-        "tslib": "^2.3.0",
-        "zone.js": "~0.11.4"
-    },
-    "devDependencies": {
-        "@angular-devkit/build-angular": "~12.2.0",
-        "@angular/cli": "^12.2.0",
-        "@angular/compiler-cli": "~12.2.0",
-        "@types/node": "~16.4.13",
-        "@typescript-eslint/eslint-plugin": "^4.29.0",
-        "@typescript-eslint/parser": "^4.29.0",
-        "eslint": "^7.32.0",
-        "ts-node": "~10.1.0",
-        "typescript": "~4.2.4"
-    },
-    "engines": {
-        "node": ">=14.0"
-    },
-    "license": "LICENSE",
-    "name": "rdio-scanner-client",
-    "private": true,
-    "scripts": {
-        "build": "ng build --base-href ./ --configuration production",
-        "start": "ng serve"
-    },
-    "version": "5.2.5"
+  "author": "Chrystian Huot <chrystian.huot@saubeo.solutions>",
+  "dependencies": {
+    "@angular-devkit/build-angular": "^12.2.18",
+    "@angular/animations": "^12.2.16",
+    "@angular/cdk": "^12.2.13",
+    "@angular/cli": "^12.2.18",
+    "@angular/common": "^12.2.16",
+    "@angular/core": "^12.2.16",
+    "@angular/forms": "^12.2.16",
+    "@angular/material": "^12.2.13",
+    "@angular/platform-browser-dynamic": "^12.2.16",
+    "@angular/router": "^12.2.16",
+    "@angular/service-worker": "^12.2.16",
+    "angular": "^1.8.3",
+    "npm": "^6.14.17",
+    "rxjs": "~6.5.5",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.11.4"
+  },
+  "devDependencies": {
+    "@types/node": "~16.4.13",
+    "@typescript-eslint/eslint-plugin": "^4.29.0",
+    "@typescript-eslint/parser": "^4.29.0",
+    "angular-ide": "^0.9.77",
+    "eslint": "^7.32.0",
+    "ts-node": "~10.1.0"
+  },
+  "engines": {
+    "node": ">=14.0"
+  },
+  "license": "LICENSE",
+  "name": "rdio-scanner-client",
+  "private": true,
+  "scripts": {
+    "build": "ng build --base-href ./ --configuration production",
+    "start": "ng serve"
+  },
+  "version": "5.2.9"
 }
