@@ -502,227 +502,263 @@ export class RdioScannerAdminService implements OnDestroy {
     }
 
     private configWebSocketOpen(): void {
-        if (!this.token) {
-            return;
-        }
+      if (!this.token) {
+          return;
+      }
 
-        const webSocketUrl = new URL(this.getUrl(url.config), window.location.href).href.replace(/^http/, 'ws');
+      const webSocketUrl = new URL(this.getUrl(url.config), window.location.href).href.replace(/^http/, 'ws');
 
-        this.configWebSocket = new WebSocket(webSocketUrl);
+      this.configWebSocket = new WebSocket(webSocketUrl);
 
-        this.configWebSocket.onclose = (ev: CloseEvent) => {
-            if (ev.code === 1000) {
-                this.token = '';
+      this.configWebSocket.onclose = (ev: CloseEvent) => {
+          if (ev.code === 1000) {
+              this.token = '';
 
-                this.event.emit({ authenticated: this.authenticated });
+              this.event.emit({ authenticated: this.authenticated });
+          } else {
+              timer(2000).subscribe(() => this.configWebSocketReconnect());
+          }
+      };
+
+      this.configWebSocket.onopen = () => {
+          this.configWebSocket?.send(this.token);
+
+          if (this.configWebSocket instanceof WebSocket) {
+              this.configWebSocket.onmessage = (ev: MessageEvent<string>) => {
+                  this.event.emit({ config: JSON.parse(ev.data) });
+              }
+          }
+      }
+  }
+
+  private errorHandler(error: HttpErrorResponse): void {
+      if (error.status === 401) {
+          this.token = '';
+
+          this.event.emit({ authenticated: this.authenticated });
+
+          this.configWebSocketClose();
+
+      } else {
+          this.matSnackBar.open(error.message, '', { duration: 5000 });
+      }
+  }
+
+  private getHeaders(): HttpHeaders {
+      return new HttpHeaders({
+          Authorization: this.token || '',
+      });
+  }
+
+  private getUrl(path: string): string {
+      return `${window.location.href}/../api/admin${path.charAt(0) === '/' ? path : `/${path}`}`;
+  }
+
+  private validateAccessCode(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'string' || !control.value.length) {
+              return null;
+          }
+
+          const access: Access[] = control.parent?.parent?.getRawValue() || [];
+
+          // const count = access.reduce((c, a) => c += a.code === control.value ? 1 : 0, 0);
+          const count = access.filter((a => a.code === control.value));
+          if (count.length > 1) {
+              return { duplicate: true };
+          } else {
+              return null;
+          }
+          // return count > 1 ? { duplicate: true } : null;
+      };
+  }
+
+  private validateApiKey(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'string' || !control.value.length) {
+              return null;
+          }
+
+          const apiKeys: ApiKey[] = control.parent?.parent?.getRawValue() || [];
+
+          //const count = apiKeys.reduce((c, a) => c += a.key === control.value ? 1 : 0, 0);
+
+          const count = apiKeys.filter((a => a.key === control.value));
+          if (count.length > 1) {
+              return { duplicate: true };
+          } else {
+              return null;
+          }
+          //return count > 1 ? { duplicate: true } : null;
+      };
+  }
+
+  private validateBlacklists(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          return typeof control.value === 'string' && control.value.length ? /^[0-9]+(,[0-9]+)*$/.test(control.value) ? null : { invalid: true } : null;
+      };
+  }
+
+  private validateDirectory(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'string' || !control.value.length) {
+              return null;
+          }
+
+          const dirWatch: DirWatch[] = control.parent?.parent?.getRawValue() || [];
+
+          //const count = dirWatch.reduce((c, a) => c += a.directory === control.value ? 1 : 0, 0);
+
+          const count = dirWatch.filter((a => a.directory === control.value));
+          if (count.length > 1) {
+              return { duplicate: true };
+          } else {
+              return null;
+          }
+          //return count > 1 ? { duplicate: true } : null;
+      };
+  }
+
+  private validateDownstreamUrl(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'string' || !control.value.length) {
+              return null;
+          }
+
+          const downstream: Downstream[] = control.parent?.parent?.getRawValue() || [];
+
+          //const count = downstream.reduce((c, a) => c += a.url === control.value ? 1 : 0, 0);
+
+          const count = downstream.filter((a => a.url === control.value));
+          if (count.length > 1) {
+              return { duplicate: true };
+          } else {
+              return null;
+          }
+          //return count > 1 ? { duplicate: true } : null;
+      };
+  }
+
+  private validateDirwatchSystemId(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          const dirwatch = control.parent?.getRawValue() || {};
+
+          const mask = dirwatch.mask || '';
+
+          const type = dirwatch.type;
+
+          return ['sdr-trunk'].includes(type) || control.value !== null || /#SYS/.test(mask) ? null : { required: true };
+      };
+  }
+
+  private validateDirwatchTalkgroupId(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          const dirwatch = control.parent?.getRawValue() || {};
+
+          const mask = dirwatch.mask || '';
+
+          const type = dirwatch.type;
+
+          return ['trunk-recorder', 'sdr-trunk'].includes(type) || control.value !== null || /#TG/.test(mask) ? null : { required: true };
+      };
+  }
+
+  private validateExtension(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'string' || !control.value.length) {
+              return null;
+          }
+
+          return /^[0-9a-zA-Z]+$/.test(control.value) ? null : { invalid: true };
+      };
+  }
+
+  private validateGroup(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'number') {
+              return null;
+          }
+
+          const groupIds = control.root.get('groups')?.value.map((group: Group) => group._id);
+
+          return groupIds ? groupIds.includes(control.value) ? null : { required: true } : null;
+      };
+  }
+
+  private validateId(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (control.value === null || typeof control.value !== 'number') {
+              return null;
+          }
+
+          const systems: System[] = control.parent?.parent?.getRawValue() || [];
+
+          //const count = systems.reduce((c, s) => c += s.id === control.value ? 1 : 0, 0);
+          const count = systems.filter((s => s.id === control.value));
+          if (count.length > 1) {
+              return { duplicate: true };
+          } else {
+              return null;
+          }
+          // return count > 1 ? { duplicate: true } : null;
+      };
+  }
+
+  private validateMask(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'string') {
+              return null;
+          }
+
+          const masks = ['#DATE', '#HZ', '#KHZ', '#MHZ', '#SYS', '#TIME', '#TG', '#UNIT', '#ZTIME'];
+
+          const metas = control.value.match(/(#[A-Z]+)/g) || [];
+
+          const count = metas.reduce((c, m) => {
+              if (masks.includes(m)) {
+                  c++;
+              }
+
+              return c;
+          }, 0);
+
+          return count ? null : { invalid: true };
+      };
+  }
+
+  private validatePatches(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          return typeof control.value === 'string' && control.value.length ? /^[0-9]+(,[0-9]+)*$/.test(control.value) ? null : { invalid: true } : null;
+      };
+  }
+
+  private validateTag(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'number') {
+              return null;
+          }
+
+          const tagIds = control.root.get('tags')?.value.map((tag: Tag) => tag._id);
+          if (tagIds) {
+            if (tagIds.includes(control.value)) {
+                return null;
             } else {
-                timer(2000).subscribe(() => this.configWebSocketReconnect());
+                return { required: true };
             }
-        };
-
-        this.configWebSocket.onopen = () => {
-            this.configWebSocket?.send(this.token);
-
-            if (this.configWebSocket instanceof WebSocket) {
-                this.configWebSocket.onmessage = (ev: MessageEvent<string>) => {
-                    this.event.emit({ config: JSON.parse(ev.data) });
-                }
-            }
-        }
-    }
-
-    private errorHandler(error: HttpErrorResponse): void {
-        if (error.status === 401) {
-            this.token = '';
-
-            this.event.emit({ authenticated: this.authenticated });
-
-            this.configWebSocketClose();
-
         } else {
-            this.matSnackBar.open(error.message, '', { duration: 5000 });
+            return null;
         }
-    }
+        //  return tagIds ? tagIds.includes(control.value) ? null : { required: true } : null;
+      };
+  }
 
-    private getHeaders(): HttpHeaders {
-        return new HttpHeaders({
-            Authorization: this.token || '',
-        });
-    }
+  private validateUrl(): ValidatorFn {
+      return (control: AbstractControl): ValidationErrors | null => {
+          if (typeof control.value !== 'string' || !control.value.length) {
+              return null;
+          }
 
-    private getUrl(path: string): string {
-        return `${window.location.href}/../api/admin${path.charAt(0) === '/' ? path : `/${path}`}`;
-    }
-
-    private validateAccessCode(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'string' || !control.value.length) {
-                return null;
-            }
-
-            const access: Access[] = control.parent?.parent?.getRawValue() || [];
-
-            const count = access.reduce((c, a) => c += a.code === control.value ? 1 : 0, 0);
-
-            return count > 1 ? { duplicate: true } : null;
-        };
-    }
-
-    private validateApiKey(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'string' || !control.value.length) {
-                return null;
-            }
-
-            const apiKeys: ApiKey[] = control.parent?.parent?.getRawValue() || [];
-
-            const count = apiKeys.reduce((c, a) => c += a.key === control.value ? 1 : 0, 0);
-
-            return count > 1 ? { duplicate: true } : null;
-        };
-    }
-
-    private validateBlacklists(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            return typeof control.value === 'string' && control.value.length ? /^[0-9]+(,[0-9]+)*$/.test(control.value) ? null : { invalid: true } : null;
-        };
-    }
-
-    private validateDirectory(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'string' || !control.value.length) {
-                return null;
-            }
-
-            const dirWatch: DirWatch[] = control.parent?.parent?.getRawValue() || [];
-
-            const count = dirWatch.reduce((c, a) => c += a.directory === control.value ? 1 : 0, 0);
-
-            return count > 1 ? { duplicate: true } : null;
-        };
-    }
-
-    private validateDownstreamUrl(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'string' || !control.value.length) {
-                return null;
-            }
-
-            const downstream: Downstream[] = control.parent?.parent?.getRawValue() || [];
-
-            const count = downstream.reduce((c, a) => c += a.url === control.value ? 1 : 0, 0);
-
-            return count > 1 ? { duplicate: true } : null;
-        };
-    }
-
-    private validateDirwatchSystemId(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            const dirwatch = control.parent?.getRawValue() || {};
-
-            const mask = dirwatch.mask || '';
-
-            const type = dirwatch.type;
-
-            return ['sdr-trunk'].includes(type) || control.value !== null || /#SYS/.test(mask) ? null : { required: true };
-        };
-    }
-
-    private validateDirwatchTalkgroupId(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            const dirwatch = control.parent?.getRawValue() || {};
-
-            const mask = dirwatch.mask || '';
-
-            const type = dirwatch.type;
-
-            return ['trunk-recorder', 'sdr-trunk'].includes(type) || control.value !== null || /#TG/.test(mask) ? null : { required: true };
-        };
-    }
-
-    private validateExtension(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'string' || !control.value.length) {
-                return null;
-            }
-
-            return /^[0-9a-zA-Z]+$/.test(control.value) ? null : { invalid: true };
-        };
-    }
-
-    private validateGroup(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'number') {
-                return null;
-            }
-
-            const groupIds = control.root.get('groups')?.value.map((group: Group) => group._id);
-
-            return groupIds ? groupIds.includes(control.value) ? null : { required: true } : null;
-        };
-    }
-
-    private validateId(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (control.value === null || typeof control.value !== 'number') {
-                return null;
-            }
-
-            const systems: System[] = control.parent?.parent?.getRawValue() || [];
-
-            const count = systems.reduce((c, s) => c += s.id === control.value ? 1 : 0, 0);
-
-            return count > 1 ? { duplicate: true } : null;
-        };
-    }
-
-    private validateMask(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'string') {
-                return null;
-            }
-
-            const masks = ['#DATE', '#HZ', '#KHZ', '#MHZ', '#SYS', '#TIME', '#TG', '#UNIT', '#ZTIME'];
-
-            const metas = control.value.match(/(#[A-Z]+)/g) || [];
-
-            const count = metas.reduce((c, m) => {
-                if (masks.includes(m)) {
-                    c++;
-                }
-
-                return c;
-            }, 0);
-
-            return count ? null : { invalid: true };
-        };
-    }
-
-    private validatePatches(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            return typeof control.value === 'string' && control.value.length ? /^[0-9]+(,[0-9]+)*$/.test(control.value) ? null : { invalid: true } : null;
-        };
-    }
-
-    private validateTag(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'number') {
-                return null;
-            }
-
-            const tagIds = control.root.get('tags')?.value.map((tag: Tag) => tag._id);
-
-            return tagIds ? tagIds.includes(control.value) ? null : { required: true } : null;
-        };
-    }
-
-    private validateUrl(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== 'string' || !control.value.length) {
-                return null;
-            }
-
-            return /^https?:\/\/.+$/.test(control.value) ? null : { invalid: true }
-        };
-    }
+          return /^https?:\/\/.+$/.test(control.value) ? null : { invalid: true }
+      };
+  }
 }

@@ -27,7 +27,7 @@
             <span>{{ callTalkgroup }}</span>
         </div>
         <div>
-            <span>{{ callProgress | date:'HH:mm' }}</span>
+            <span style="overflow: visible;">{{ callProgress | date:'HH:mm' }}<br />{{ callProgress | date:'YYYY-MM-dd' }}</span>
         </div>
     </div>
     <div class="row big">
@@ -80,7 +80,7 @@
                         <span>System</span>
                     </th>
                     <th>
-                        <span>Talkgroup</span>
+                        <span>Channel</span>
                     </th>
                     <th>
                         <span>Name</span>
@@ -118,7 +118,7 @@
         </button>
         <div class="spacer"></div>
         <button class="rdio-button" (click)="holdTalkgroup()" [ngClass]="{ off: !holdTg, on: holdTg }">
-            HOLD<br>TG
+            HOLD<br>CHANNEL
         </button>
     </div>
     <div class="row">
@@ -144,7 +144,7 @@
         </button>
         <div class="spacer"></div>
         <button class="rdio-button" (click)="showSelectPanel()">
-            SELECT<br>TG
+            SELECT<br>CHANNELS
         </button>
     </div>
 </div>

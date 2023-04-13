@@ -39,10 +39,6 @@ callFactory.schema = {
         primaryKey: true,
         autoIncrement: true,
     },
-    audio: {
-        type: Sequelize.DataTypes.BLOB('long'),
-        allowNull: false,
-    },
     audioName: {
         type: Sequelize.DataTypes.STRING,
         allowNull: true,

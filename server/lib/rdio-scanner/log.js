@@ -89,8 +89,9 @@ export class Log extends EventEmitter {
 
         try {
             await this._db.create({ dateTime, level, message });
-
-            console.log(message);
+            if (level != 'info') { // stop log spamming and just log in the db
+                console.log(message);
+            }
 
         } catch (error) {
             console.error(`Log: ${error.message}`);

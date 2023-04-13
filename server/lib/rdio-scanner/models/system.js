@@ -39,6 +39,10 @@ systemFactory.schema = {
         primaryKey: true,
         autoIncrement: true,
     },
+    label: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false,
+    },
     autoPopulate: {
         type: Sequelize.DataTypes.BOOLEAN,
         defaultValue: false,
@@ -64,10 +68,6 @@ systemFactory.schema = {
         type: Sequelize.DataTypes.INTEGER,
         allowNull: false,
         unique: true,
-    },
-    label: {
-        type: Sequelize.DataTypes.STRING,
-        allowNull: false,
     },
     led: {
         type: Sequelize.DataTypes.STRING,

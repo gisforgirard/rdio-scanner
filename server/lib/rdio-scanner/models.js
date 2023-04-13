@@ -21,6 +21,7 @@
 
 import { accessFactory } from './models/access.js';
 import { apiKeyFactory } from './models/api-key.js';
+import { audioFactory } from './models/audio.js';
 import { callFactory } from './models/call.js';
 import { configFactory } from './models/config.js';
 import { dirWatchFactory } from './models/dir-watch.js';
@@ -35,6 +36,8 @@ export class Models {
         this.access = accessFactory(ctx);
 
         this.apiKey = apiKeyFactory(ctx);
+
+        this.audio = audioFactory(ctx);
 
         this.call = callFactory(ctx);
 

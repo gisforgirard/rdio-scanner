@@ -83,8 +83,8 @@ export class UploadCall {
                 const audioType = reqAudio.mimetype;
 
                 const dateTime = new Date(reqBody.dateTime * 1000);
-                console.log(dateTime);
-                console.log(reqBody.dateTime);
+                //console.log(dateTime);
+                //console.log(reqBody.dateTime);
 
                 let frequencies;
 

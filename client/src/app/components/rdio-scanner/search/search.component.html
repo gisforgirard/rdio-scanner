@@ -45,7 +45,7 @@
         </ng-container>
         <ng-container matColumnDef="alpha">
             <mat-header-cell *matHeaderCellDef>
-                <span>Talkgroup</span>
+                <span>Channel</span>
             </mat-header-cell>
             <mat-cell *matCellDef="let row">
                 <span>{{ row?.talkgroupData?.label || row?.talkgroup }}</span>
@@ -115,14 +115,14 @@
         </mat-form-field>
         <mat-form-field>
             <mat-label>
-                Talkgroup
+                Channel
             </mat-label>
             <mat-select formControlName="talkgroup" (selectionChange)="formTalkgroupHandler()">
                 <mat-option [value]="-1">
-                    All Talkgroups
+                    All Channels
                 </mat-option>
-                <mat-option *ngFor="let talkgroup of optionsTalkgroup; index as i" [value]="i">
-                    {{ talkgroup }}
+                <mat-option *ngFor="let talkgroup of optionsTalkgroup; index as i" [value]="talkgroup.id">
+                  {{ talkgroup.label }} / {{ talkgroup.name }}
                 </mat-option>
             </mat-select>
         </mat-form-field>

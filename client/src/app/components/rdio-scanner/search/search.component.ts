@@ -59,7 +59,7 @@ export class RdioScannerSearchComponent implements OnDestroy {
 	optionsGroup: string[] = [];
 	optionsSystem: string[] = [];
 	optionsTag: string[] = [];
-	optionsTalkgroup: string[] = [];
+	optionsTalkgroup: RdioScannerTalkgroup[] = [];
 
 	paused = false;
 
@@ -108,68 +108,42 @@ export class RdioScannerSearchComponent implements OnDestroy {
 		const selectedTag = this.getSelectedTag();
 
 		const selectedTalkgroup = this.getSelectedTalkgroup();
-		// this shit right here drives me crazy because of how incredibly unstructured it is to try and read, holy fuck wtf
-		// The filter() method creates a shallow copy of a portion of a given array, filtered down to just the elements from the given array that pass the test implemented by the provided function.
-		// The some() method tests whether at least one element in the array passes the test implemented by the provided function.
-		// It returns true if, in the array, it finds an element for which the provided function returns true; otherwise it returns false. It doesn't modify the array. 
-		// The map() method creates a new array populated with the results of calling a provided function on every element in the calling array. 
-		/*
-		if (selectedGroup) {
-			systems.filter talkgroups
-			some talkgroup === selectedGroup
-			map system to system.label
-		} else {
-			if (selectedTag) {
-				config.systems.filter talkgroups
-				some talkgroup === selectedTag
-				map to system.label
-			}
-		} */
-		this.optionsSystem = selectedGroup
-			? this.config.systems
-				.filter((system) => system.talkgroups
-					.some((talkgroup) => talkgroup.group === selectedGroup))
-				.map((system) => system.label)
-			: selectedTag
-				? this.config.systems
-					.filter((system) => system.talkgroups
-						.some((talkgroup) => talkgroup.tag === selectedTag))
-					.map((system) => system.label)
-				: this.config.systems
-					.map((system) => system.label);
-
-		this.optionsTag = selectedGroup
-			? Object.keys(this.config.tags)
-				.filter((tag) => this.config?.systems
-					.some((system) => system.talkgroups
-						.some((talkgroup) => talkgroup.group === selectedGroup && talkgroup.tag === tag)))
-			: selectedTalkgroup
-				? [selectedTalkgroup.tag]
-				: selectedSystem
-					? Object.keys(this.config.tags)
-						.filter((tag) => selectedSystem.talkgroups
-							.some((talkgroup) => talkgroup.tag === tag))
-					: Object.keys(this.config.tags)
-		this.optionsTag.sort((a, b) => a.localeCompare(b));
-
-		this.optionsTalkgroup = selectedGroup
-			? selectedSystem
-				? selectedSystem.talkgroups
-					.filter((talkgroup) => talkgroup.group === selectedGroup)
-					.map((talkgroup) => talkgroup.label)
-				: []
-			: selectedSystem
-				? selectedSystem.talkgroups
-					.map((talkgroup) => talkgroup.label)
-				: [];
+    if (selectedGroup) {
+      this.optionsSystem = this.config.systems.filter(system => system.talkgroups.some(talkgroup => talkgroup.group === selectedGroup)).map(system => system.label);
+      this.optionsTag = Object.keys(this.config.tags).filter(tag => this.config?.systems.some(system => system.talkgroups.some(talkgroup => talkgroup.group === selectedGroup && talkgroup.tag === tag)));
+      if (selectedSystem) {
+        this.optionsTalkgroup = selectedSystem.talkgroups.filter(talkgroup => talkgroup.group === selectedGroup);
+      } else {
+        this.optionsTalkgroup = [];
+      }
+    } else {
+      if (selectedTag) {
+        this.optionsSystem = this.config.systems.filter(system => system.talkgroups.some(talkgroup => talkgroup.tag === selectedTag)).map(system => system.label);
+      } else {
+        this.optionsSystem = this.config.systems.map(system => system.label);
+      }
+      if (selectedSystem) {
+        this.optionsTalkgroup = selectedSystem.talkgroups;
+      } else {
+        this.optionsTalkgroup = [];
+      }
+      this.optionsTag.sort((a, b) => a.localeCompare(b));
+      if (selectedTalkgroup) {
+        this.optionsTag = [selectedTalkgroup.tag];
+      } else {
+        if (selectedSystem) {
+          this.optionsTag = Object.keys(this.config.tags).filter(tag => selectedSystem.talkgroups.some(talkgroup => talkgroup.tag === tag));
+        }
+        this.optionsTag = Object.keys(this.config.tags);
+      }
+    }
 
 		this.form.patchValue({
 			system: selectedSystem ? this.optionsSystem.findIndex((system) => system === selectedSystem.label) : -1,
 			tag: selectedTag ? this.optionsTag.findIndex((tag) => tag === selectedTag) : -1,
-			talkgroup: selectedTalkgroup ? this.optionsTalkgroup.findIndex((talkgroup) => talkgroup === selectedTalkgroup.label) : -1,
+			talkgroup: selectedTalkgroup ? this.optionsTalkgroup.findIndex((talkgroup) => talkgroup.id === selectedTalkgroup.id) : -1,
 		});
-
-		this.formChangeHandler();
+    this.formChangeHandler();
 	}
 
 	formSystemHandler(): void {
@@ -205,15 +179,48 @@ export class RdioScannerSearchComponent implements OnDestroy {
 			? selectedSystem.talkgroups
 				.filter((talkgroup) => (selectedGroup ? talkgroup.group === selectedGroup : true)
 					&& (selectedTag ? talkgroup.tag === selectedTag : true))
-				.map((talkgroup) => talkgroup.label)
 			: [];
 
 		this.form.patchValue({
 			group: selectedGroup ? this.optionsGroup.findIndex((group) => group === selectedGroup) : -1,
 			tag: selectedTag ? this.optionsTag.findIndex((tag) => tag === selectedTag) : -1,
-			talkgroup: selectedTalkgroup ? this.optionsTalkgroup.findIndex((talkgroup) => talkgroup === selectedTalkgroup.label) : -1,
+			talkgroup: selectedTalkgroup ? this.optionsTalkgroup.findIndex((talkgroup) => talkgroup.id === selectedTalkgroup.id) : -1,
 		});
 
+    //   if (selectedSystem) {
+    //     this.optionsGroup =  Object.keys(this.config.groups).filter(group => Object.keys(this.config?.groups[group] || {}).map(system => +system).includes(selectedSystem.id));
+    //   } else {
+    //   this.optionsGroup =  Object.keys(this.config.groups);
+    // }
+    // this.optionsGroup.sort((a, b) => a.localeCompare(b));
+
+    //   if (selectedSystem) {
+    //     this.optionsTag =  Object.keys(this.config.tags).filter(tag => Object.keys(this.config?.tags[tag] || {}).map(system => +system).includes(selectedSystem.id));
+    //   } else {
+    //   this.optionsTag =  Object.keys(this.config.tags);
+    // }
+    // this.optionsTag.sort((a, b) => a.localeCompare(b));
+    // this.optionsTalkgroup = function () {
+    //   if (selectedSystem) {
+    //     return selectedSystem.talkgroups.filter(talkgroup => function () {
+    //       if (selectedGroup) {
+    //         return talkgroup.group === selectedGroup;
+    //       }
+    //       return true;
+    //     }() && function () {
+    //       if (selectedTag) {
+    //         return talkgroup.tag === selectedTag;
+    //       }
+    //       return true;
+    //     }()).map(talkgroup => talkgroup.label);
+    //   }
+    //   return [];
+    // }();
+		// this.form.patchValue({
+		// 	group: selectedGroup ? this.optionsGroup.findIndex((group) => group === selectedGroup) : -1,
+		// 	tag: selectedTag ? this.optionsTag.findIndex((tag) => tag === selectedTag) : -1,
+		// 	talkgroup: selectedTalkgroup ? this.optionsTalkgroup.findIndex((talkgroup) => talkgroup === selectedTalkgroup.label) : -1,
+		// });
 		this.formChangeHandler();
 	}
 
@@ -230,48 +237,74 @@ export class RdioScannerSearchComponent implements OnDestroy {
 
 		const selectedTalkgroup = this.getSelectedTalkgroup();
 
-		this.optionsGroup = selectedTag
-			? Object.keys(this.config.groups)
-				.filter((group) => this.config?.systems
-					.some((system) => system.talkgroups
-						.some((talkgroup) => talkgroup.group === group && talkgroup.tag === selectedTag)))
-			: selectedTalkgroup
-				? [selectedTalkgroup.group]
-				: selectedSystem
-					? Object.keys(this.config.groups)
-						.filter((group) => selectedSystem.talkgroups
-							.some((talkgroup) => talkgroup.group === group))
-					: Object.keys(this.config.groups)
-		this.optionsGroup.sort((a, b) => a.localeCompare(b));
+		// this.optionsGroup = selectedTag
+		// 	? Object.keys(this.config.groups)
+		// 		.filter((group) => this.config?.systems
+		// 			.some((system) => system.talkgroups
+		// 				.some((talkgroup) => talkgroup.group === group && talkgroup.tag === selectedTag)))
+		// 	: selectedTalkgroup
+		// 		? [selectedTalkgroup.group]
+		// 		: selectedSystem
+		// 			? Object.keys(this.config.groups)
+		// 				.filter((group) => selectedSystem.talkgroups
+		// 					.some((talkgroup) => talkgroup.group === group))
+		// 			: Object.keys(this.config.groups)
+		// this.optionsGroup.sort((a, b) => a.localeCompare(b));
 
-		this.optionsSystem = selectedTag
-			? this.config.systems
-				.filter((system) => system.talkgroups
-					.some((talkgroup) => talkgroup.tag === selectedTag))
-				.map((system) => system.label)
-			: selectedGroup
-				? this.config.systems
-					.filter((system) => system.talkgroups
-						.some((talkgroup) => talkgroup.group === selectedGroup))
-					.map((system) => system.label)
-				: this.config.systems
-					.map((system) => system.label);
+		// this.optionsSystem = selectedTag
+		// 	? this.config.systems
+		// 		.filter((system) => system.talkgroups
+		// 			.some((talkgroup) => talkgroup.tag === selectedTag))
+		// 		.map((system) => system.label)
+		// 	: selectedGroup
+		// 		? this.config.systems
+		// 			.filter((system) => system.talkgroups
+		// 				.some((talkgroup) => talkgroup.group === selectedGroup))
+		// 			.map((system) => system.label)
+		// 		: this.config.systems
+		// 			.map((system) => system.label);
 
-		this.optionsTalkgroup = selectedTag
-			? selectedSystem
-				? selectedSystem.talkgroups
-					.filter((talkgroup) => talkgroup.tag === selectedTag)
-					.map((talkgroup) => talkgroup.label)
-				: []
-			: selectedSystem
-				? selectedSystem.talkgroups
-					.map((talkgroup) => talkgroup.label)
-				: [];
+		// this.optionsTalkgroup = selectedTag
+		// 	? selectedSystem
+		// 		? selectedSystem.talkgroups
+		// 			.filter((talkgroup) => talkgroup.tag === selectedTag)
+		// 		: []
+		// 	: selectedSystem
+		// 		? selectedSystem.talkgroups
+		// 		: [];
+    if (selectedTag) {
+      this.optionsGroup = Object.keys(this.config.groups).filter(group => this.config?.systems.some(system => system.talkgroups.some(talkgroup => talkgroup.group === group && talkgroup.tag === selectedTag)));
+    } else if (selectedTalkgroup) {
+        this.optionsGroup =  [selectedTalkgroup.group];
+    } else if (selectedSystem) {
+          this.optionsGroup =  Object.keys(this.config.groups).filter(group => selectedSystem.talkgroups.some(talkgroup => talkgroup.group === group));
+    } else {
+      this.optionsGroup =  Object.keys(this.config.groups);
+    }
+    this.optionsGroup.sort((a, b) => a.localeCompare(b));
 
+    if (selectedTag) {
+      this.optionsSystem = this.config.systems.filter(system => system.talkgroups.some(talkgroup => talkgroup.tag === selectedTag)).map(system => system.label);
+    } else if (selectedGroup) {
+      this.optionsSystem = this.config.systems.filter(system => system.talkgroups.some(talkgroup => talkgroup.group === selectedGroup)).map(system => system.label);
+    } else {
+      this.optionsSystem = this.config.systems.map(system => system.label);
+    }
+    if (selectedTag) {
+      if (selectedSystem) {
+        this.optionsTalkgroup = selectedSystem.talkgroups.filter(talkgroup => talkgroup.tag === selectedTag);
+      } else {
+        this.optionsTalkgroup = [];
+      }
+    } else if (selectedSystem) {
+      this.optionsTalkgroup = selectedSystem.talkgroups;
+    } else {
+      this.optionsTalkgroup = [];
+    }
 		this.form.patchValue({
 			group: selectedGroup ? this.optionsGroup.findIndex((group) => group === selectedGroup) : -1,
 			system: selectedSystem ? this.optionsSystem.findIndex((system) => system === selectedSystem.label) : -1,
-			talkgroup: selectedTalkgroup ? this.optionsTalkgroup.findIndex((talkgroup) => talkgroup === selectedTalkgroup.label) : -1,
+			talkgroup: selectedTalkgroup ? this.optionsTalkgroup.findIndex((talkgroup) => talkgroup.id === selectedTalkgroup.id) : -1,
 		});
 
 		this.formChangeHandler();
@@ -290,26 +323,45 @@ export class RdioScannerSearchComponent implements OnDestroy {
 
 		const selectedTalkgroup = this.getSelectedTalkgroup();
 
-		this.optionsGroup = selectedTalkgroup
-			? Object.keys(this.config.groups)
-				.filter((group) => group === selectedTalkgroup.group)
-			: selectedSystem
-				? Object.keys(this.config.groups)
-					.filter((group) => selectedSystem.talkgroups
-						.some((talkgroup) => talkgroup.group === group))
-				: Object.keys(this.config.groups)
-		this.optionsGroup.sort((a, b) => a.localeCompare(b));
+		// this.optionsGroup = selectedTalkgroup
+		// 	? Object.keys(this.config.groups)
+		// 		.filter((group) => group === selectedTalkgroup.group)
+		// 	: selectedSystem
+		// 		? Object.keys(this.config.groups)
+		// 			.filter((group) => selectedSystem.talkgroups
+		// 				.some((talkgroup) => talkgroup.group === group))
+		// 		: Object.keys(this.config.groups)
+		// this.optionsGroup.sort((a, b) => a.localeCompare(b));
 
-		this.optionsTag = selectedTalkgroup
-			? Object.keys(this.config.tags)
-				.filter((tag) => tag === selectedTalkgroup.tag)
-			: selectedSystem
-				? Object.keys(this.config.tags)
-					.filter((tag) => selectedSystem.talkgroups
-						.some((talkgroup) => talkgroup.tag === tag))
-				: Object.keys(this.config.tags)
-		this.optionsTag.sort((a, b) => a.localeCompare(b));
-
+		// this.optionsTag = selectedTalkgroup
+		// 	? Object.keys(this.config.tags)
+		// 		.filter((tag) => tag === selectedTalkgroup.tag)
+		// 	: selectedSystem
+		// 		? Object.keys(this.config.tags)
+		// 			.filter((tag) => selectedSystem.talkgroups
+		// 				.some((talkgroup) => talkgroup.tag === tag))
+		// 		: Object.keys(this.config.tags)
+// this.optionsTag.sort((a, b) => a.localeCompare(b));
+    if (selectedTalkgroup) {
+      this.optionsGroup = Object.keys(this.config.groups).filter((group) => group === selectedTalkgroup.group);
+    } else {
+      if (selectedSystem) {
+        this.optionsGroup = Object.keys(this.config.groups).filter((group) => selectedSystem.talkgroups.some((talkgroup) => talkgroup.group === group));
+      } else {
+        this.optionsGroup = Object.keys(this.config.groups);
+      }
+    }
+    this.optionsGroup.sort((a, b) => a.localeCompare(b));
+    if (selectedTalkgroup) {
+      this.optionsTag = Object.keys(this.config.tags).filter((tag) => tag === selectedTalkgroup.tag);
+    } else {
+      if (selectedSystem) {
+        this.optionsTag = Object.keys(this.config.tags).filter((tag) => selectedSystem.talkgroups.some((talkgroup) => talkgroup.tag === tag));
+      } else {
+        this.optionsTag = Object.keys(this.config.tags);
+      }
+    }
+    this.optionsTag.sort((a, b) => a.localeCompare(b));
 		this.form.patchValue({
 			group: selectedGroup ? this.optionsGroup.findIndex((group) => group === selectedGroup) : -1,
 			tag: selectedTag ? this.optionsTag.findIndex((tag) => tag === selectedTag) : -1,
@@ -514,16 +566,18 @@ export class RdioScannerSearchComponent implements OnDestroy {
 			// this guy that programmed this shit makes so many questionable design choices like this
 			// and i will never understand why
 			system.talkgroups.find((talkgroup) => talkgroup.label === this.optionsTalkgroup[this.form.value.talkgroup])
-		   return 
+		   return
 		} else {
 			return undefined;
 		}
 		*/
 		if (system !== undefined) {
-			console.log(system.talkgroups);
+      console.log("system is not undefined...");
 		}
-		return system
-			? system.talkgroups.find((talkgroup) => talkgroup.label === this.optionsTalkgroup[this.form.value.talkgroup])
-			: undefined;
+    if (system) {
+      return system.talkgroups.find(talkgroup => talkgroup.id === this.form.value.talkgroup);
+    } else {
+      return undefined;
+    }
 	}
 }
